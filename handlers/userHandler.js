@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 
 const postSignUp = (req, res) => {
   const { email, password, username } = req.body;
-  // 필수값 체크
   if (!email || !password || !username) {
     return res.status(400).json({ message: "필수 항목이 누락되었습니다." });
   };
@@ -45,9 +44,8 @@ const postLogin = (req, res) => {
       return res.status(401).json({ message: "이메일 또는 비밀번호가 올바르지 않습니다." });
     }
 
-    // JWT 토큰 발급
     const token = jwt.sign(
-      { userId: user.id, email: user.email, username: user.username },
+      { userId: user.users_id, email: user.email, username: user.username },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -55,4 +53,41 @@ const postLogin = (req, res) => {
   });
 };
 
-module.exports = { postSignUp, postLogin };
+const getUserInfo = (req, res) => {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    return res.status(401).json({ message: '토큰이 없습니다.' });
+  }
+  
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: '토큰이 없습니다.' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+    
+    const sql = `
+    SELECT users_id, email, username FROM users WHERE users_id = ?;
+    `;
+    
+    db.query(sql, [userId], (err, results) => {
+      if (err) {
+        console.error('DB 오류:', err);
+        return res.status(500).json({ message: '서버 오류' });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+      }
+      
+      const user = results[0];
+      return res.status(200).json({ user });
+    });
+  } catch (err) {
+    return res.status(401).json({ message: '유효하지 않은 토큰입니다.' });
+  }
+}
+
+module.exports = { postSignUp, postLogin, getUserInfo };
