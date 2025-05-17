@@ -6,8 +6,19 @@ const PORT = process.env.PORT || 8000;
 const app = express();
 require('dotenv').config();
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://capstone2025-9fwc6j2in-jungchangwoos-projects.vercel.app'
+];
+
 const corsOptions = {
-  origin: 'http://localhost:5173',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 };
 
