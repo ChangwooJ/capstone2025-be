@@ -62,10 +62,32 @@ const orderUpbit = async (req, res) => {
 
 const getOrderList = async (req, res) => {
   try {
-    // 1. 업비트 API 인증을 위한 토큰 생성
+    // 1. 쿼리 파라미터 처리
+    const { market, state = 'done', page = 1, limit = 20, order_by = 'desc' } = req.query;
+
+    // 2. 쿼리 파라미터를 문자열로 변환
+    const queryObj = {
+      ...(market && { market }),
+      state,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      order_by
+    };
+    
+    const query = querystring.stringify(queryObj);
+    
+    // 3. query_hash 생성
+    const queryHash = crypto
+      .createHash('sha512')
+      .update(query, 'utf-8')
+      .digest('hex');
+
+    // 4. 업비트 API 인증을 위한 토큰 생성
     const payload = {
-      access_key: access_key,
+      access_key,
       nonce: uuid.v4(),
+      query_hash: queryHash,
+      query_hash_alg: 'SHA512'
     };
 
     const token = jwt.sign(payload, secret_key);
@@ -73,22 +95,12 @@ const getOrderList = async (req, res) => {
       Authorization: `Bearer ${token}`,
     };
 
-    // 2. 쿼리 파라미터 처리
-    const { market, state = 'done', page = 1, limit = 20, order_by = 'desc' } = req.query;
-
-    // 3. 업비트 API 호출
-    const response = await axios.get(`${server_url}/v1/orders`, {
-      headers,
-      params: {
-        market,
-        state,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        order_by
-      }
+    // 5. 업비트 API 호출
+    const response = await axios.get(`${server_url}/v1/orders?${query}`, {
+      headers
     });
 
-    // 4. 응답 반환
+    // 6. 응답 반환
     return res.status(200).json({
       success: true,
       data: response.data
@@ -99,6 +111,7 @@ const getOrderList = async (req, res) => {
 
     // 업비트 API 에러 처리
     if (error.response) {
+      console.error('업비트 API 에러:', error.response.data);
       return res.status(error.response.status).json({
         success: false,
         error: error.response.data
