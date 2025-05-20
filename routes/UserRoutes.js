@@ -2,6 +2,7 @@ const express = require('express');
 const { postSignUp, postLogin, getUserInfo } = require('../handlers/userHandler');
 const { getMyWallet, getMyAsset } = require('../handlers/userWalletHandler');
 const { getTradingLog, getAlgorithmLogs, startAiTrading, stopAiTrading, getAiStatus } = require('../handlers/userAlgorismApi');
+const { getOrderList } = require('../handlers/TransactionHandler');
 const userRouter = express.Router();
 
 userRouter.post('/signup', postSignUp);
@@ -14,6 +15,6 @@ userRouter.get('/logs', getAlgorithmLogs);
 userRouter.post('/ai/start', startAiTrading);
 userRouter.post('/ai/stop', stopAiTrading);
 userRouter.get('/ai/status', getAiStatus);
-userRouter.get('/mytradelogs', getMyTradeLogs);
+userRouter.get('/mytradelogs', getOrderList);
 
 module.exports = userRouter;
