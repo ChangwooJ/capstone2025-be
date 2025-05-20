@@ -63,7 +63,18 @@ const orderUpbit = async (req, res) => {
 const getOrderList = async (req, res) => {
   try {
     // 1. 쿼리 파라미터 처리
-    const { market, state = 'done', page = 1, limit = 20, order_by = 'desc' } = req.query;
+    const { 
+      market, 
+      state = 'done', 
+      page = 1, 
+      limit = 20, 
+      order_by = 'desc',
+      // 추가 필터링 옵션
+      side,           // bid(매수) 또는 ask(매도)
+      ord_type,       // limit(지정가), price(시장가 매수), market(시장가 매도)
+      start_date,     // YYYY-MM-DD 형식
+      end_date,       // YYYY-MM-DD 형식
+    } = req.query;
 
     // 2. 쿼리 파라미터를 문자열로 변환
     const queryObj = {
@@ -100,10 +111,42 @@ const getOrderList = async (req, res) => {
       headers
     });
 
-    // 6. 응답 반환
+    // 6. 응답 데이터 필터링
+    let filteredData = response.data;
+
+    // 거래 종류 필터링
+    if (side) {
+      filteredData = filteredData.filter(order => order.side === side);
+    }
+
+    // 주문 타입 필터링
+    if (ord_type) {
+      filteredData = filteredData.filter(order => order.ord_type === ord_type);
+    }
+
+    // 기간 필터링
+    if (start_date || end_date) {
+      filteredData = filteredData.filter(order => {
+        const orderDate = new Date(order.created_at);
+        const start = start_date ? new Date(start_date) : new Date(0);
+        const end = end_date ? new Date(end_date + 'T23:59:59') : new Date();
+        return orderDate >= start && orderDate <= end;
+      });
+    }
+
+    // 7. 응답 반환
     return res.status(200).json({
       success: true,
-      data: response.data
+      data: filteredData,
+      meta: {
+        total: filteredData.length,
+        filtered: {
+          side,
+          ord_type,
+          start_date,
+          end_date
+        }
+      }
     });
 
   } catch (error) {
