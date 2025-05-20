@@ -1,4 +1,4 @@
-import mysql from 'mysql2';
+const mysql = require('mysql2');
 require('dotenv').config();
 
 const db = mysql.createPool({
