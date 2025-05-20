@@ -14,5 +14,6 @@ userRouter.get('/logs', getAlgorithmLogs);
 userRouter.post('/ai/start', startAiTrading);
 userRouter.post('/ai/stop', stopAiTrading);
 userRouter.get('/ai/status', getAiStatus);
+userRouter.get('/mytradelogs', getMyTradeLogs);
 
 module.exports = userRouter;
