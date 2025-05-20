@@ -62,107 +62,54 @@ const orderUpbit = async (req, res) => {
 
 const getOrderList = async (req, res) => {
   try {
-    // 사용자 인증 토큰 확인
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) {
-      return res.status(401).json({
-        success: false,
-        error: '인증 토큰이 필요합니다.'
-      });
-    }
+    // 1. 업비트 API 인증을 위한 토큰 생성
+    const payload = {
+      access_key: access_key,
+      nonce: uuid.v4(),
+    };
 
-    const token = authHeader.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: '유효하지 않은 인증 토큰 형식입니다.'
-      });
-    }
+    const token = jwt.sign(payload, secret_key);
+    const headers = {
+      Authorization: `Bearer ${token}`,
+    };
 
-    try {
-      // JWT 토큰 검증
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      // 토큰에서 사용자 ID 추출 (필요한 경우 사용)
-      const userId = decoded.userId;
-      
-      // 업비트 API는 state 파라미터에 배열을 받을 수 있음
-      const { market, states = ['done', 'cancel', 'wait'], page = 1, limit = 20 } = req.query;
-      
-      // states가 문자열로 오면 배열로 변환
-      const stateArray = Array.isArray(states) ? states : [states];
-      
-      // 페이지와 limit이 숫자인지 확인
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
-      
-      if (isNaN(pageNum) || isNaN(limitNum)) {
-        return res.status(400).json({ 
-          success: false,
-          error: '페이지와 limit은 숫자여야 합니다.' 
-        });
+    // 2. 쿼리 파라미터 처리
+    const { market, state = 'done', page = 1, limit = 20, order_by = 'desc' } = req.query;
+
+    // 3. 업비트 API 호출
+    const response = await axios.get(`${server_url}/v1/orders`, {
+      headers,
+      params: {
+        market,
+        state,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        order_by
       }
+    });
 
-      // 업비트 API 요청 파라미터 구성
-      const queryObj = {
-        ...(market && { market }), // market이 있는 경우에만 포함
-        states: stateArray.join(','), // 업비트 API는 콤마로 구분된 문자열을 받음
-        page: pageNum,
-        limit: limitNum,
-      };
-
-      const query = querystring.stringify(queryObj);
-      const queryHash = crypto.createHash('sha512').update(query, 'utf-8').digest('hex');
-
-      const payload = {
-        access_key,
-        nonce: uuid.v4(),
-        query_hash: queryHash,
-        query_hash_alg: 'SHA512',
-      };
-
-      const upbitToken = jwt.sign(payload, secret_key);
-      const headers = {
-        Authorization: `Bearer ${upbitToken}`,
-      };
-
-      const response = await axios.get(`${server_url}/v1/orders?${query}`, { headers });
-      
-      // 업비트 API 응답을 그대로 전달
-      return res.status(200).json({
-        success: true,
-        data: response.data,
-      });
-
-    } catch (jwtError) {
-      console.error('JWT 토큰 검증 실패:', jwtError);
-      return res.status(401).json({
-        success: false,
-        error: '유효하지 않은 인증 토큰입니다.'
-      });
-    }
+    // 4. 응답 반환
+    return res.status(200).json({
+      success: true,
+      data: response.data
+    });
 
   } catch (error) {
-    console.error('주문 내역 조회 중 오류 발생:', error);
-    
+    console.error('주문 내역 조회 실패:', error);
+
+    // 업비트 API 에러 처리
     if (error.response) {
-      // 업비트 API에서 반환한 에러
       return res.status(error.response.status).json({
         success: false,
         error: error.response.data
       });
-    } else if (error.request) {
-      // 요청은 보냈지만 응답을 받지 못한 경우
-      return res.status(503).json({
-        success: false,
-        error: '업비트 서버에 연결할 수 없습니다.'
-      });
-    } else {
-      // 기타 에러
-      return res.status(500).json({
-        success: false,
-        error: '서버 내부 오류가 발생했습니다.'
-      });
     }
+
+    // 기타 에러
+    return res.status(500).json({
+      success: false,
+      error: '주문 내역 조회 중 오류가 발생했습니다.'
+    });
   }
 };
 
