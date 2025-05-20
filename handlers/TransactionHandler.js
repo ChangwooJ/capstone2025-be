@@ -62,19 +62,27 @@ const orderUpbit = async (req, res) => {
 
 const getOrderList = async (req, res) => {
   try {
-    const { market = 'KRW-BTC', state = 'done', page = 1, limit = 20 } = req.query;
-
+    // 업비트 API는 state 파라미터에 배열을 받을 수 있음
+    const { market, states = ['done', 'cancel', 'wait'], page = 1, limit = 20 } = req.query;
+    
+    // states가 문자열로 오면 배열로 변환
+    const stateArray = Array.isArray(states) ? states : [states];
+    
     // 페이지와 limit이 숫자인지 확인
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     
     if (isNaN(pageNum) || isNaN(limitNum)) {
-      return res.status(400).json({ error: '페이지와 limit은 숫자여야 합니다.' });
+      return res.status(400).json({ 
+        success: false,
+        error: '페이지와 limit은 숫자여야 합니다.' 
+      });
     }
 
+    // 업비트 API 요청 파라미터 구성
     const queryObj = {
-      market,
-      state,
+      ...(market && { market }), // market이 있는 경우에만 포함
+      states: stateArray.join(','), // 업비트 API는 콤마로 구분된 문자열을 받음
       page: pageNum,
       limit: limitNum,
     };
@@ -96,18 +104,11 @@ const getOrderList = async (req, res) => {
 
     const response = await axios.get(`${server_url}/v1/orders?${query}`, { headers });
     
-    if (!response.data) {
-      return res.status(404).json({ error: '주문 내역을 찾을 수 없습니다.' });
-    }
-
+    // 업비트 API 응답을 그대로 전달
     return res.status(200).json({
       success: true,
       data: response.data,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total: response.data.length
-      }
+      // 업비트 API는 페이지네이션 정보를 제공하지 않으므로 제거
     });
 
   } catch (error) {
