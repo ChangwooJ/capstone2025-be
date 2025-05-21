@@ -9,7 +9,8 @@ require('dotenv').config();
 const allowedOrigins = [
   'http://localhost:5173',
   'https://capstone2025-9fwc6j2in-jungchangwoos-projects.vercel.app',
-  'https://capstone2025-fe-git-develop-jungchangwoos-projects.vercel.app'
+  'https://capstone2025-fe-git-develop-jungchangwoos-projects.vercel.app',
+  'https://nexbit.p-e.kr'
 ];
 
 
