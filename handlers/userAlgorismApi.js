@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const getTradingLog = async (req, res) => {
     try {
-        const response = await axios.get('http://13.211.209.54:8000/trade_log');
+        const response = await axios.get('http://13.211.77.105:8000/trade_log');
         res.status(200).json(response.data);
         console.log(response);
     } catch (error) {
