@@ -4,7 +4,6 @@ const getTradingLog = async (req, res) => {
     try {
         const response = await axios.get('http://13.211.77.105:8000/trade_log');
         res.status(200).json(response.data);
-        console.log(response);
     } catch (error) {
         console.error('거래 로그 조회 중 오류 발생:', error);
         res.status(500).json({
