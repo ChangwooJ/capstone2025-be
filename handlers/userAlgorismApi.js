@@ -79,7 +79,20 @@ const getPredictPrice = async (req, res) => {
             error: error.message
         });
     }
-}
+};
+
+const getPredictProbability = async (req, res) => {
+    try {
+        const response = await axios.get('http://13.211.77.105:8000/predict_up_probability');
+        res.status(200).json(response.data);
+    } catch (error) {
+        console.error('예측 확률 조회 중 오류 발생:', error);
+        res.status(500).json({
+            message: '예측 확률 조회 중 오류가 발생했습니다.',
+            error: error.message
+        });
+    }
+};
 
 module.exports = {
     getTradingLog,
@@ -87,5 +100,6 @@ module.exports = {
     startAiTrading,
     stopAiTrading,
     getAiStatus,
-    getPredictPrice
+    getPredictPrice,
+    getPredictProbability
 };
