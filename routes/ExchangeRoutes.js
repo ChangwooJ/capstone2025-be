@@ -2,12 +2,13 @@ const express = require('express');
 const getPrice = require('../handlers/PriceHandler');
 const getBTCChart = require('../handlers/ExchangeHandler');
 const { orderUpbit } = require('../handlers/TransactionHandler');
-const { getPredictPrice } = require('../handlers/userAlgorismApi');
+const { getPredictPrice, getPredictProbability } = require('../handlers/userAlgorismApi');
 const router = express.Router();
 
 router.get('/exchange_price', getPrice);
 router.get('/exchangePrice', getBTCChart);
 router.post('/order', orderUpbit);
 router.get('/predict_price', getPredictPrice);
+router.get('/predict_probabtility', getPredictProbability);
 
 module.exports = router;
